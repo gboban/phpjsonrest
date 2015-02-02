@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Index</title>
+<script src="js/addressbook.js" ></script>
+<script language="javascript" >
+var list = get_phones(4);
+console.log(list);
+
+var tbl = null;
+
+var page_first = 0;
+var page_count = 10;
+var page_pattern = '%';
+var listview = true;
+var contact = null;
+
+function load_table(){
+	var contacts = get_contacts(page_pattern, page_first, page_count);
+	//console.log("CON:");
+	//console.log(contacts);
+	//console.log(contacts[0]);
+	for(var i = 0; i < contacts.length; ++i){
+		var c_row = tbl.insertRow(i+1);
+		
+		var cell0 = c_row.insertCell();
+		cell0.innerHTML = '<button onclick="edit_item(' + contacts[i].contact_id + ')">edit</button>';
+		cell0.innerHTML += '<button onclick="delete_item(' + contacts[i].contact_id + ')">delete</button>';
+		cell0.onclick = 'edit_item(this)';
+		
+		var cell1 = c_row.insertCell();
+		cell1.innerHTML = contacts[i].contact_name;
+		
+		var cell2 = c_row.insertCell();
+		cell2.innerHTML = contacts[i].contact_surname;
+		
+		var cell3 = c_row.insertCell();
+		cell3.innerHTML = contacts[i].contact_city;
+		
+		var phones = contacts[i].phones;
+		var allphones = '';
+		for(var j = 0; j < contacts[i].phones.length; ++j){
+			if(j > 0) allphones += ', ';
+			allphones += contacts[i].phones[j].phone_number
+		}
+		var cell4 = c_row.insertCell();
+		cell4.innerHTML = allphones;
+	}
+}
+
+function clear_table(){
+console.log('CLEAR: ' + tbl.rows.length);
+	var len = tbl.rows.length - 1;
+	for(var i = 1; i < len; ++i){
+		console.log('...deleting: '+i);
+		tbl.deleteRow(1);
+	}
+}
+
+function initialize_table(){
+	load_table();
+}
+
+function tbl_prev(){
+	console.log('prev: ' + page_first);
+	if(page_first > 0){
+		page_first -= page_count;
+	}
+	
+	if(page_first < 0) page_first = 0;
+
+	console.log('TBL: ' + tbl);
+	
+	clear_table()
+	load_table();
+}
+
+function tbl_next(){
+	console.log('next: ' + page_first);
+	
+	if(tbl.rows.length - 2 >= page_count){
+		page_first += page_count;
+	}
+	
+	clear_table()
+	load_table();
+}
+
+function tbl_search(){
+	var pat = document.getElementById("pattern");
+	page_pattern = '%'+pat.value+'%';
+	page_first = 0;
+	
+	clear_table();
+	load_table();
+}
+
+function toggle_display(showEl, hideEl) {
+    showEl.style.display = 'block';
+    hideEl.style.display = 'none';
+}
+
+function update_view(){
+console.log('listview: ' + listview);
+clear_table();
+load_table();
+	if(listview){
+		lstvid.style.display = 'block';
+		itmvid.style.display = 'none';
+	}else{
+
+		lstvid.style.display = 'none';
+		itmvid.style.display = 'block';
+	}
+	
+console.log('...' + lstvid.style.display);
+console.log('...' + itmvid.style.display);
+}
+function toggle_listview(){
+	listview = !listview;
+	
+	update_view();
+}
+
+function edit_item(id){
+	console.log('EDIT:');
+	console.log(id);
+	console.log('');
+	
+	// get item by id
+	contact = get_contact(id);
+console.log(contact);
+	var field_name = document.getElementById('item_name');
+	var field_surname = document.getElementById('item_surname');
+	var field_city = document.getElementById('item_city');
+	var field_desc = document.getElementById('item_desc');
+console.log(contact);
+	field_name.value = contact.contact_name;
+	field_surname.value = contact.contact_surname;
+	field_city.value = contact.contact_city;
+	field_desc.value = contact.contact_desc;
+	
+	listview = false;
+	update_view();
+	
+}
+
+function save_item(){
+console.log("SAVE:");
+	if(contact == null){
+		// add new
+		var dataObj = {
+			contact_name: item_name.value,
+			contact_surname: item_surname.value,
+			contact_city: item_city.value,
+			contact_desc: item_desc.value
+		}
+ 
+		contact = dataObj;
+		var id = post_contact(contact);
+		contact.contact_id = id;
+		console.log('post contact: ' + id);
+	}else{
+		contact.contact_name = item_name.value;
+		contact.contact_surname = item_surname.value;
+		contact.contact_city = item_city.value;
+		contact.contact_desc = item_desc.value;
+		
+		var r = put_contact(contact.contact_id, contact);
+		console.log('put contact: ' + r);
+console.log(contact);
+		
+	}
+}
+
+function new_item(){
+	console.log('NEW:');
+	console.log('');
+	
+	contact = null;
+	
+	item_name.value = '';
+	item_surname.value = '';
+	item_city.value = '';
+	item_desc.value = '';
+	
+	listview = false;
+	update_view();
+}
+
+function delete_item(id){
+	var r = confirm("Delete item " + id + "?");
+	if (r == true) {
+	    delete_contact(id);
+	    window.alert("Item deleted!");
+	}else{
+		//window.alert("Item NOT deleted!");
+	}
+	
+	update_view();
+}
+</script>
+</head>
+<body>
+<hr />
+<input type="button" name="search" value="Traži" onclick="tbl_search();" /><input id="pattern" type="text" name="pattern" />
+<div id="lstvid" style="display: block;">
+<div id="searchtab">
+<table id="tab" border="1">
+	<thead>
+		<th align="left">Ime</th>
+		<th align="left">Prezime</th>
+		<th align="left">Grad</th>
+		<th align="left">Svi telefoni</th>
+	</thead>
+	<tbody>
+	</tbody>
+	<tfoot>
+		<td colspan="4"><ul id="paging">
+			<button id="btnPrev" onclick="tbl_prev(this.parent)">&lt; prev</button>
+			|
+			<button id="btnNext" onclick="tbl_next(this.parent)">next &gt;</button>
+		</ul></td>
+		<td><button id="btnAdd" onclick="new_item()">new contact</button></td>
+	</tfoot>
+</table>
+</div>
+</div>
+<div id="itmvid" style="display: block;">
+	<button onclick="toggle_listview()">nazad na pretraživanje</button>
+	<table>
+		<tr>
+			<td>Ime:</td>
+			<td><input type="text" id="item_name" /></td>		
+		</tr>
+		<tr>
+			<td>Prezime:</td>
+			<td><input type="text" id="item_surname" /></td>		
+		</tr>
+		<tr>
+			<td>Grad:</td>
+			<td><input type="text" id="item_city" /></td>		
+		</tr>
+		<tr>
+			<td>Opis</td>
+			<td><input type="text" id="item_desc" /></td>		
+		</tr>
+		<tr>
+			<td></td>
+			<td><button id="btn_edit" onclick="save_item()" >pošalji</button></td>		
+		</tr>
+	</table>
+	<table>
+		<tr>
+			<td></td>
+			<td></td>
+			<td></td>
+		</tr>
+	</table>
+</div>
+<script >
+tbl = document.getElementById("tab");
+console.log("TABID:");
+console.log(tbl);
+
+initialize_table();
+update_view();
+</script>
+</body>
+</html>
